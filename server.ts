@@ -11,7 +11,21 @@ dotenv.config();
 
 const supabaseUrl = process.env.VITE_SUPABASE_URL || "";
 const supabaseAnonKey = process.env.VITE_SUPABASE_ANON_KEY || "";
-const supabase = createClient(supabaseUrl, supabaseAnonKey);
+
+let supabase: any;
+if (supabaseUrl && supabaseAnonKey) {
+  supabase = createClient(supabaseUrl, supabaseAnonKey);
+} else {
+  console.warn("WARNING: Supabase credentials missing. Database features will be disabled.");
+  // Provide a mock supabase object or handle null checks in endpoints
+  supabase = {
+    from: () => ({
+      insert: () => ({ select: () => ({ single: () => Promise.resolve({ data: null, error: new Error("Supabase not configured") }) }) }),
+      select: () => ({ eq: () => Promise.resolve({ data: [], error: new Error("Supabase not configured") }) }),
+      update: () => ({ eq: () => ({ select: () => ({ single: () => Promise.resolve({ data: null, error: new Error("Supabase not configured") }) }) }) }),
+    })
+  };
+}
 
 const geminiApiKey = process.env.GEMINI_API_KEY || "";
 const ai = new GoogleGenAI({ apiKey: geminiApiKey });

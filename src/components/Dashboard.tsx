@@ -71,36 +71,6 @@ export default function Dashboard({ session }: any) {
 
   return (
     <div className="min-h-screen bg-slate-50 font-sans text-slate-900 pb-20">
-      <header className="bg-white border-b border-slate-200 sticky top-0 z-50">
-        <div className="max-w-[1400px] mx-auto px-6 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-10">
-            <div className="flex items-center gap-2 cursor-pointer">
-              <div className="w-8 h-8 bg-red-500 rounded-lg flex items-center justify-center shadow-sm">
-                <Briefcase className="text-white w-5 h-5" />
-              </div>
-              <span className="text-xl font-bold tracking-tight">Jobplex</span>
-            </div>
-            
-            <nav className="hidden md:flex items-center gap-8 h-full">
-              <a href="#" className="h-full flex items-center text-sm font-bold text-slate-500 hover:text-slate-900 transition-colors">Find Jobs</a>
-              <a href="#" className="h-full flex items-center text-sm font-bold text-slate-500 hover:text-slate-900 transition-colors">Auto-Apply Agent</a>
-              <a href="#" className="h-full flex items-center text-sm font-bold text-slate-500 hover:text-slate-900 transition-colors">Resume Builder</a>
-              <a href="#" className="h-full flex items-center text-sm font-bold text-red-500 border-b-2 border-red-500 py-5">My Applications</a>
-            </nav>
-          </div>
-
-          <div className="flex items-center gap-4">
-            <button className="p-2 hover:bg-slate-100 rounded-full transition-colors relative">
-              <Bookmark className="w-5 h-5 text-slate-600" />
-            </button>
-            <button className="w-9 h-9 bg-slate-100 rounded-full flex items-center justify-center border border-slate-200 shadow-sm overflow-hidden">
-              <UserIcon className="w-5 h-5 text-slate-500" />
-            </button>
-          </div>
-        </div>
-      </header>
-
-      {/* Kanban Board Header area */}
       <div className="max-w-[1600px] mx-auto px-8 pt-10 pb-4 flex justify-between items-end">
         <div>
           <h1 className="text-3xl font-black text-slate-900 tracking-tight">Application Status Tracker</h1>
