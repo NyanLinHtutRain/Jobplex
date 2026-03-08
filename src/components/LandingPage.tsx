@@ -1,282 +1,269 @@
 import React, { useState } from 'react';
-import { Search, MapPin, Briefcase, Filter, ChevronRight, Star } from 'lucide-react';
-import { motion } from 'motion/react';
+import { Search, MapPin, Briefcase, DollarSign, Bell, User, LayoutGrid, Globe, Bookmark, ExternalLink, ChevronDown } from 'lucide-react';
 
-interface Job {
-  id: string;
-  title: string;
-  company: string;
-  location: string;
-  type: string;
-  salary: string;
-  logo: string;
-  postedAt: string;
-}
-
-interface LandingPageProps {
-  onLoginClick: () => void;
-}
-
-export default function LandingPage({ onLoginClick }: LandingPageProps) {
+export default function LandingPage({ onLoginClick }: any) {
   const [searchQuery, setSearchQuery] = useState('');
-  const [locationQuery, setLocationQuery] = useState('');
-  const [jobs, setJobs] = useState<Job[]>([]);
-  const [isSearching, setIsSearching] = useState(false);
-  const [hasSearched, setHasSearched] = useState(false);
 
-  const handleSearch = async () => {
-    setIsSearching(true);
-    setHasSearched(true);
-    try {
-      const response = await fetch(`/api/jobs/search?q=${encodeURIComponent(searchQuery || 'Software Engineer')}`);
-      if (!response.ok) throw new Error('Failed to fetch jobs');
-      const data = await response.json();
-      setJobs(data);
-    } catch (err) {
-      console.error(err);
-      alert('Failed to search jobs');
-    } finally {
-      setIsSearching(false);
+  const jobs = [
+    {
+      id: '1',
+      title: 'Senior Product Designer',
+      company: 'Spotify',
+      location: 'Stockholm, Sweden',
+      time: '2h ago',
+      type: 'Full-time',
+      isRemote: true,
+      salary: '$120k - $160k',
+      icon: '🎵',
+      iconBg: 'bg-red-50',
+      iconText: 'text-red-500'
+    },
+    {
+      id: '2',
+      title: 'Frontend Developer (React)',
+      company: 'Airbnb',
+      location: 'San Francisco, CA',
+      time: '5h ago',
+      type: 'Contract',
+      isRemote: false,
+      isHybrid: true,
+      salary: '$140k - $180k',
+      icon: '🏠',
+      iconBg: 'bg-red-50',
+      iconText: 'text-red-500'
+    },
+    {
+      id: '3',
+      title: 'Cloud Infrastructure Engineer',
+      company: 'Stripe',
+      location: 'Remote',
+      time: '1d ago',
+      type: 'Full-time',
+      isRemote: true,
+      salary: '$160k - $210k',
+      icon: '☁️',
+      iconBg: 'bg-red-50',
+      iconText: 'text-red-500'
+    },
+    {
+      id: '4',
+      title: 'Data Analyst',
+      company: 'Netflix',
+      location: 'Los Gatos, CA',
+      time: '2d ago',
+      type: 'Full-time',
+      isRemote: false,
+      isOnsite: true,
+      salary: '$130k - $170k',
+      icon: '📊',
+      iconBg: 'bg-red-50',
+      iconText: 'text-red-500'
     }
-  };
+  ];
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-slate-50 font-sans text-slate-900">
       {/* Header */}
       <header className="bg-white border-b border-slate-200 sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between h-16 items-center">
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center">
+        <div className="max-w-[1400px] mx-auto px-6 h-16 flex items-center justify-between">
+          <div className="flex items-center gap-10">
+            <div className="flex items-center gap-2 cursor-pointer" onClick={() => onLoginClick()}>
+              <div className="w-8 h-8 bg-red-500 rounded-lg flex items-center justify-center">
                 <Briefcase className="text-white w-5 h-5" />
               </div>
-              <span className="text-xl font-bold text-slate-900 tracking-tight">HireStream</span>
+              <span className="text-xl font-bold">Jobplex</span>
             </div>
             
-            <div className="flex items-center gap-4">
-              <button 
-                onClick={onLoginClick}
-                className="px-4 py-2 text-sm font-medium text-slate-600 hover:text-slate-900 transition-colors"
-              >
-                Sign In
-              </button>
-              <button 
-                onClick={onLoginClick}
-                className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 transition-all shadow-sm"
-              >
-                Get Started
-              </button>
-            </div>
+            <nav className="hidden md:flex items-center gap-8">
+              <a href="#" className="text-sm font-bold text-red-500 border-b-2 border-red-500 pb-5 mt-5">Find Jobs</a>
+              <a href="#" className="text-sm font-bold text-slate-500 hover:text-slate-900 transition-colors">Auto-Apply Agent</a>
+              <a href="#" className="text-sm font-bold text-slate-500 hover:text-slate-900 transition-colors">Resume Builder</a>
+              <a href="#" className="text-sm font-bold text-slate-500 hover:text-slate-900 transition-colors">My Applications</a>
+            </nav>
+          </div>
+
+          <div className="flex items-center gap-4">
+            <button className="p-2 hover:bg-slate-100 rounded-full transition-colors relative">
+              <Bell className="w-5 h-5 text-slate-600" />
+              <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full border border-white"></span>
+            </button>
+            <button className="w-9 h-9 bg-slate-100 rounded-full flex items-center justify-center border border-slate-200">
+              <User className="w-5 h-5 text-slate-500" />
+            </button>
           </div>
         </div>
       </header>
 
-      {/* Hero Section */}
-      <section className="bg-white border-b border-slate-200 py-16 px-4">
-        <div className="max-w-4xl mx-auto text-center">
-          <motion.h1 
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="text-4xl sm:text-5xl font-extrabold text-slate-900 tracking-tight mb-6"
-          >
-            Find your next <span className="text-indigo-600">dream job</span> today.
-          </motion.h1>
-          <motion.p 
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1 }}
-            className="text-lg text-slate-600 mb-10"
-          >
-            Browse thousands of high-quality job listings from top companies around the world.
-          </motion.p>
-
-          {/* Search Bar */}
-          <motion.div 
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ delay: 0.2 }}
-            className="bg-white p-2 rounded-2xl shadow-xl border border-slate-200 flex flex-col md:flex-row gap-2"
-          >
-            <div className="flex-1 flex items-center px-4 gap-3 border-b md:border-b-0 md:border-r border-slate-100 py-2">
-              <Search className="w-5 h-5 text-slate-400" />
-              <input 
-                type="text" 
-                placeholder="Job title, keywords..." 
-                className="w-full bg-transparent border-none focus:ring-0 text-slate-900 placeholder:text-slate-400"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
-            </div>
-            <div className="flex-1 flex items-center px-4 gap-3 py-2">
-              <MapPin className="w-5 h-5 text-slate-400" />
-              <input 
-                type="text" 
-                placeholder="City, state, or remote" 
-                className="w-full bg-transparent border-none focus:ring-0 text-slate-900 placeholder:text-slate-400"
-                value={locationQuery}
-                onChange={(e) => setLocationQuery(e.target.value)}
-              />
-            </div>
-            <button 
-              onClick={handleSearch}
-              disabled={isSearching}
-              className="bg-indigo-600 text-white px-8 py-3 rounded-xl font-semibold hover:bg-indigo-700 transition-all shadow-md disabled:opacity-50"
-            >
-              {isSearching ? 'Searching...' : 'Search Jobs'}
+      {/* Main Content */}
+      <main className="max-w-[1400px] mx-auto px-6 py-8">
+        {/* Search and Filters */}
+        <div className="flex flex-col lg:flex-row gap-4 mb-8">
+          <div className="flex-1 bg-white border border-slate-200 rounded-xl px-4 py-2 flex items-center gap-3 shadow-sm focus-within:ring-2 focus-within:ring-red-100 transition-all">
+            <Search className="w-5 h-5 text-red-500" />
+            <input 
+              type="text" 
+              placeholder="Search job titles, keywords, or companies" 
+              className="flex-1 outline-none text-sm font-medium bg-transparent"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+          </div>
+          <div className="flex flex-wrap gap-3">
+            {[
+              { icon: MapPin, label: 'Location' },
+              { icon: Briefcase, label: 'Job Type' },
+              { icon: DollarSign, label: 'Salary' }
+            ].map((filter, i) => (
+              <button key={i} className="bg-white border border-slate-200 rounded-xl px-4 py-2 flex items-center gap-2 text-sm font-bold text-slate-700 hover:border-slate-300 transition-all shadow-sm">
+                <filter.icon className="w-4 h-4 text-red-500" />
+                {filter.label}
+                <ChevronDown className="w-4 h-4 text-slate-400 ml-2" />
+              </button>
+            ))}
+            <button className="bg-red-500 hover:bg-red-600 text-white px-8 py-2 rounded-xl font-bold transition-all shadow-lg shadow-red-500/20">
+              Search
             </button>
-          </motion.div>
+          </div>
         </div>
-      </section>
 
-      {/* Filters & Content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <div className="flex flex-col lg:flex-row gap-8">
-          {/* Sidebar Filters */}
-          <aside className="w-full lg:w-64 space-y-8">
-            <div>
-              <h3 className="flex items-center gap-2 text-sm font-bold text-slate-900 uppercase tracking-wider mb-4">
-                <Filter className="w-4 h-4" />
-                Filters
-              </h3>
-              
-              <div className="space-y-6">
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-2">Job Type</label>
-                  <div className="space-y-2">
-                    {['Full-time', 'Part-time', 'Contract', 'Internship'].map((type) => (
-                      <label key={type} className="flex items-center gap-2 cursor-pointer group">
-                        <input type="checkbox" className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500" />
-                        <span className="text-sm text-slate-600 group-hover:text-slate-900 transition-colors">{type}</span>
-                      </label>
-                    ))}
+        <div className="grid lg:grid-cols-[400px_1fr] gap-8">
+          {/* Left Column: Job List */}
+          <div className="space-y-4">
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-xs font-black text-slate-400 uppercase tracking-widest leading-none">RECOMMENDED JOBS (128)</h2>
+              <button className="text-xs font-bold text-red-500 flex items-center gap-1">
+                Sort by: <span className="text-red-500">Newest</span>
+              </button>
+            </div>
+
+            <div className="space-y-4 max-h-[calc(100vh-320px)] overflow-y-auto pr-2 custom-scrollbar">
+              {jobs.map((job) => (
+                <div 
+                  key={job.id} 
+                  className={`bg-white border rounded-2xl p-6 cursor-pointer transition-all hover:shadow-md ${job.id === '1' ? 'border-red-500 ring-1 ring-red-500' : 'border-slate-200'}`}
+                >
+                  <div className="flex justify-between items-start mb-4">
+                    <div className={`w-12 h-12 rounded-xl flex items-center justify-center text-xl shadow-sm border border-slate-100 ${job.iconBg}`}>
+                      {job.icon}
+                    </div>
+                    <span className="text-[11px] font-bold text-slate-400">{job.time}</span>
+                  </div>
+                  <h3 className="font-bold text-lg text-slate-900 mb-1">{job.title}</h3>
+                  <p className="text-sm font-medium text-slate-500 mb-4">{job.company} • {job.location}</p>
+                  <div className="flex flex-wrap gap-2">
+                    <span className="px-3 py-1 bg-red-50 text-red-500 text-[10px] font-bold rounded-full uppercase tracking-wider">{job.type}</span>
+                    {job.isRemote && <span className="px-3 py-1 bg-slate-100 text-slate-500 text-[10px] font-bold rounded-full uppercase tracking-wider">Remote</span>}
+                    {job.isHybrid && <span className="px-3 py-1 bg-slate-100 text-slate-500 text-[10px] font-bold rounded-full uppercase tracking-wider">Hybrid</span>}
+                    {job.isOnsite && <span className="px-3 py-1 bg-slate-100 text-slate-500 text-[10px] font-bold rounded-full uppercase tracking-wider">On-site</span>}
+                    <span className="px-3 py-1 bg-slate-100 text-slate-500 text-[10px] font-bold rounded-full uppercase tracking-wider">{job.salary}</span>
                   </div>
                 </div>
+              ))}
+            </div>
+          </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-2">Experience Level</label>
-                  <div className="space-y-2">
-                    {['Entry Level', 'Mid Level', 'Senior Level', 'Director'].map((level) => (
-                      <label key={level} className="flex items-center gap-2 cursor-pointer group">
-                        <input type="checkbox" className="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500" />
-                        <span className="text-sm text-slate-600 group-hover:text-slate-900 transition-colors">{level}</span>
-                      </label>
-                    ))}
-                  </div>
+          {/* Right Column: Job Details */}
+          <div className="bg-white border border-slate-200 rounded-3xl p-8 shadow-sm h-fit sticky top-28 overflow-y-auto max-h-[calc(100vh-160px)] custom-scrollbar">
+            <div className="flex justify-between items-start mb-8">
+              <div className="flex gap-6">
+                <div className="w-16 h-16 bg-red-50 rounded-2xl flex items-center justify-center text-3xl shadow-sm border border-slate-100">
+                  🎵
                 </div>
-
                 <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-2">Salary Range</label>
-                  <select className="w-full rounded-lg border-slate-300 text-sm focus:ring-indigo-500 focus:border-indigo-500">
-                    <option>Any Salary</option>
-                    <option>$50k - $80k</option>
-                    <option>$80k - $120k</option>
-                    <option>$120k - $160k</option>
-                    <option>$160k+</option>
-                  </select>
+                  <h1 className="text-2xl font-black text-slate-900 mb-1">Senior Product Designer</h1>
+                  <p className="text-slate-500 font-bold flex items-center gap-2">
+                    Spotify <span className="text-slate-300">•</span> Stockholm, Sweden <span className="text-slate-300">•</span> <span className="text-red-500">Remote Friendly</span>
+                  </p>
                 </div>
               </div>
-            </div>
-          </aside>
-
-          {/* Job Listings */}
-          <div className="flex-1 space-y-4">
-            <div className="flex justify-between items-center mb-6">
-              <h2 className="text-lg font-bold text-slate-900">
-                {hasSearched ? `Found ${jobs.length} jobs` : 'Search for jobs to get started'}
-              </h2>
-              {jobs.length > 0 && (
-                <select className="bg-transparent border-none text-sm font-medium text-slate-600 focus:ring-0 cursor-pointer">
-                  <option>Most Recent</option>
-                  <option>Highest Salary</option>
-                  <option>Most Relevant</option>
-                </select>
-              )}
+              <div className="flex gap-3">
+                <button className="p-3 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl transition-colors">
+                  <Bookmark className="w-5 h-5 text-slate-600" />
+                </button>
+                <button className="bg-red-500 hover:bg-red-600 text-white px-8 py-3 rounded-xl font-bold flex items-center gap-2 transition-all shadow-lg shadow-red-500/20">
+                  Apply Now <ExternalLink className="w-4 h-4" />
+                </button>
+              </div>
             </div>
 
-            <div className="grid gap-4">
-              {isSearching ? (
-                <div className="flex justify-center py-20">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
+            <div className="grid grid-cols-3 gap-6 mb-10">
+              {[
+                { label: 'SALARY RANGE', value: '$120k - $160k' },
+                { label: 'EXPERIENCE', value: '5+ Years' },
+                { label: 'EDUCATION', value: "Bachelor's Degree" }
+              ].map((item, i) => (
+                <div key={i} className="bg-slate-50/50 p-6 rounded-2xl border border-slate-100">
+                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2">{item.label}</p>
+                  <p className="font-black text-slate-900">{item.value}</p>
                 </div>
-              ) : jobs.length > 0 ? (
-                jobs.map((job, index) => (
-                  <motion.div 
-                    key={job.id}
-                    initial={{ opacity: 0, x: -20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: index * 0.1 }}
-                    className="bg-white p-5 rounded-2xl border border-slate-200 hover:border-indigo-200 hover:shadow-md transition-all cursor-pointer group"
-                    onClick={onLoginClick}
-                  >
-                    <div className="flex gap-4">
-                      <div className="w-12 h-12 rounded-xl bg-slate-100 border border-slate-200 flex items-center justify-center shrink-0">
-                        <Briefcase className="w-6 h-6 text-slate-400" />
+              ))}
+            </div>
+
+            <div className="space-y-10">
+              <section>
+                <h3 className="text-lg font-black text-slate-900 mb-4">Job Description</h3>
+                <p className="text-slate-600 leading-relaxed font-medium">
+                  We're looking for an experienced Senior Product Designer to join our Core Experience team at Spotify. You'll be responsible for creating intuitive, delightful, and human-centric experiences for millions of music fans worldwide. You'll work closely with engineers, product managers, and researchers to evolve the Spotify app across platforms.
+                </p>
+              </section>
+
+              <section>
+                <h3 className="text-lg font-black text-slate-900 mb-6">What you'll do</h3>
+                <div className="space-y-4">
+                  {[
+                    "Drive the product design process from initial concept through research, prototyping, and final implementation.",
+                    "Collaborate with cross-functional partners to define strategy and roadmap for core music features.",
+                    "Maintain and evolve our design system, ensuring consistency and accessibility across all touchpoints.",
+                    "Mentor junior designers and contribute to our thriving design culture."
+                  ].map((text, i) => (
+                    <div key={i} className="flex gap-4">
+                      <div className="w-5 h-5 rounded-full bg-red-50 flex items-center justify-center shrink-0 mt-0.5">
+                        <div className="w-2 h-2 rounded-full bg-red-500"></div>
                       </div>
-                      <div className="flex-1">
-                        <div className="flex justify-between items-start">
-                          <div>
-                            <h3 className="font-bold text-slate-900 group-hover:text-indigo-600 transition-colors">{job.title}</h3>
-                            <p className="text-sm text-slate-500">{job.company} • {job.location}</p>
-                          </div>
-                          <button className="text-slate-300 hover:text-amber-400 transition-colors">
-                            <Star className="w-5 h-5" />
-                          </button>
-                        </div>
-                        <div className="flex items-center gap-4 mt-4">
-                          <span className="px-3 py-1 bg-indigo-50 text-indigo-600 text-xs font-semibold rounded-full">
-                            Full-time
-                          </span>
-                          <span className="text-sm font-medium text-slate-700">
-                            {job.salary}
-                          </span>
-                          <span className="text-xs text-slate-400 ml-auto">
-                            {job.postedAt}
-                          </span>
-                        </div>
-                      </div>
+                      <p className="text-slate-600 font-medium text-sm leading-relaxed">{text}</p>
                     </div>
-                  </motion.div>
-                ))
-              ) : hasSearched ? (
-                <div className="text-center py-20 bg-white rounded-2xl border border-dashed border-slate-200">
-                  <Briefcase className="w-12 h-12 text-slate-300 mx-auto mb-4" />
-                  <h3 className="text-lg font-medium text-slate-900">No jobs found</h3>
-                  <p className="text-slate-500">Try adjusting your search criteria.</p>
+                  ))}
                 </div>
-              ) : (
-                <div className="text-center py-20 bg-white rounded-2xl border border-dashed border-slate-200">
-                  <Search className="w-12 h-12 text-slate-300 mx-auto mb-4" />
-                  <h3 className="text-lg font-medium text-slate-900">Ready to find your next role?</h3>
-                  <p className="text-slate-500">Enter a job title above and click Search.</p>
-                </div>
-              )}
-            </div>
+              </section>
 
-            <button className="w-full py-4 text-sm font-bold text-indigo-600 hover:bg-indigo-50 rounded-2xl border-2 border-dashed border-indigo-100 transition-all mt-4">
-              Load More Jobs
-            </button>
+              <section>
+                <h3 className="text-lg font-black text-slate-900 mb-6">Requirements</h3>
+                <div className="space-y-4 pl-4">
+                  {[
+                    "5+ years of experience in product design, preferably in consumer-facing mobile apps.",
+                    "A strong portfolio showcasing end-to-end design thinking and high-fidelity visual execution.",
+                    "Proficiency in Figma and interactive prototyping tools."
+                  ].map((text, i) => (
+                    <div key={i} className="flex gap-4 items-start">
+                      <span className="text-red-500 font-black">→</span>
+                      <p className="text-slate-600 font-medium text-sm leading-relaxed">{text}</p>
+                    </div>
+                  ))}
+                </div>
+              </section>
+
+              <section className="bg-red-50/30 p-8 rounded-3xl border border-red-50">
+                <h3 className="text-lg font-black text-slate-900 mb-6">About Spotify</h3>
+                <div className="flex gap-8">
+                  <div className="w-32 h-20 bg-slate-900 rounded-xl flex items-center justify-center overflow-hidden shadow-sm shrink-0">
+                    <img src="https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?auto=format&fit=crop&q=80&w=200" alt="Spotify" className="w-full h-full object-cover opacity-80" />
+                  </div>
+                  <p className="text-xs text-slate-600 leading-relaxed font-medium">
+                    Our mission is to unlock the potential of human creativity—by giving a million creative artists the opportunity to live off their art and billions of fans the opportunity to enjoy and be inspired by it. Spotify transformed music listening forever when we launched in 2008. Our team is global and we embrace the flexibility of working from anywhere.
+                  </p>
+                </div>
+              </section>
+            </div>
           </div>
         </div>
       </main>
 
-      {/* Footer */}
-      <footer className="bg-white border-t border-slate-200 py-12 mt-20">
-        <div className="max-w-7xl mx-auto px-4 text-center">
-          <div className="flex items-center justify-center gap-2 mb-4">
-            <div className="w-6 h-6 bg-indigo-600 rounded flex items-center justify-center">
-              <Briefcase className="text-white w-4 h-4" />
-            </div>
-            <span className="text-lg font-bold text-slate-900 tracking-tight">HireStream</span>
-          </div>
-          <p className="text-sm text-slate-400 mb-8">Connecting talent with opportunity since 2026.</p>
-          <div className="flex justify-center gap-8 text-sm font-medium text-slate-500">
-            <a href="#" className="hover:text-indigo-600 transition-colors">About</a>
-            <a href="#" className="hover:text-indigo-600 transition-colors">Privacy</a>
-            <a href="#" className="hover:text-indigo-600 transition-colors">Terms</a>
-            <a href="#" className="hover:text-indigo-600 transition-colors">Contact</a>
-          </div>
-        </div>
-      </footer>
+      <style dangerouslySetInnerHTML={{__html: `
+        .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #fca5a5; }
+      `}} />
     </div>
   );
 }

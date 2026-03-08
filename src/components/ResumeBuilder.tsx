@@ -1,381 +1,313 @@
-import React, { useState, useEffect } from 'react';
-import { supabase } from '../lib/supabase';
-import { Save, Wand2, FileDown, Plus, Trash2, CheckSquare, Square } from 'lucide-react';
+import React, { useState } from 'react';
+import { Download, Save, Plus, X, User as UserIcon, Briefcase as BriefcaseIcon, GraduationCap, Settings2, Bookmark, MapPin, Globe, Mail, Phone } from 'lucide-react';
 
-interface Experience {
-  id: string;
-  company: string;
-  role: string;
-  duration: string;
-  description: string;
-  included: boolean;
-}
-
-interface Education {
-  id: string;
-  institution: string;
-  degree: string;
-  year: string;
-  included: boolean;
-}
-
-interface ResumeBuilderProps {
-  session: any;
-}
-
-export default function ResumeBuilder({ session }: ResumeBuilderProps) {
-  const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
-  const [phone, setPhone] = useState('');
-  const [summary, setSummary] = useState('');
-  const [experiences, setExperiences] = useState<Experience[]>([]);
-  const [education, setEducation] = useState<Education[]>([]);
-  const [skills, setSkills] = useState('');
-  const [jobDescription, setJobDescription] = useState('');
-  
-  const [loading, setLoading] = useState(false);
-  const [message, setMessage] = useState({ text: '', type: '' });
-
-  useEffect(() => {
-    // Load existing profile details or latest resume if available
-    const loadProfile = async () => {
-      if (!session?.user?.id) return;
-      try {
-        const { data } = await supabase
-          .from('resumes')
-          .select('*')
-          .eq('user_id', session.user.id)
-          .order('created_at', { ascending: false })
-          .limit(1);
-          
-        if (data && data.length > 0) {
-          const details = data[0].details;
-          setName(details.name || '');
-          setEmail(details.email || '');
-          setPhone(details.phone || '');
-          setSummary(details.summary || '');
-          setSkills((details.skills || []).join(', '));
-          
-          if (details.experience) {
-            setExperiences(details.experience.map((e: any) => ({ ...e, id: crypto.randomUUID(), included: true })));
-          }
-          if (details.education) {
-            setEducation(details.education.map((e: any) => ({ ...e, id: crypto.randomUUID(), included: true })));
-          }
-        }
-      } catch (err) {
-        console.error("Failed to load profile", err);
-      }
-    };
-    loadProfile();
-  }, [session]);
-
-  const showMessage = (text: string, type: 'success' | 'error') => {
-    setMessage({ text, type });
-    setTimeout(() => setMessage({ text: '', type: '' }), 5000);
-  };
-
-  const getIncludedDetails = () => {
-    return {
-      name,
-      email,
-      phone,
-      summary,
-      skills: skills.split(',').map(s => s.trim()).filter(Boolean),
-      experience: experiences.filter(e => e.included).map(({ id, included, ...rest }) => rest),
-      education: education.filter(e => e.included).map(({ id, included, ...rest }) => rest),
-    };
-  };
-
-  const handleSaveToSupabase = async () => {
-    setLoading(true);
-    try {
-      const details = getIncludedDetails();
-      const response = await fetch('/api/resumes', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          user_id: session.user.id,
-          title: `Resume - ${new Date().toLocaleDateString()}`,
-          details
-        }),
-      });
-      
-      if (!response.ok) throw new Error("Failed to save resume");
-      
-      showMessage("Resume saved to database successfully!", "success");
-    } catch (err: any) {
-      showMessage(err.message, "error");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleTailorWithGemini = async () => {
-    if (!jobDescription) {
-      showMessage("Please paste a job description first.", "error");
-      return;
-    }
-    setLoading(true);
-    try {
-      const details = getIncludedDetails();
-      const response = await fetch('/api/resumes/tailor', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          resumeDetails: details,
-          jobDescription
-        }),
-      });
-
-      if (!response.ok) throw new Error("Failed to tailor resume");
-      
-      const tailored = await response.json();
-      
-      // Update local state with tailored response
-      if (tailored.summary) setSummary(tailored.summary);
-      if (tailored.skills) setSkills(tailored.skills.join(', '));
-      
-      if (tailored.experience) {
-        const updatedExp = experiences.map(exp => {
-          if (!exp.included) return exp;
-          // Try to match the tailored experience back to our local state
-          const matched = tailored.experience.find((t: any) => t.company === exp.company && t.role === exp.role);
-          if (matched) {
-            return { ...exp, description: matched.description };
-          }
-          return exp;
-        });
-        setExperiences(updatedExp);
-      }
-      
-      showMessage("Resume tailored successfully!", "success");
-    } catch (err: any) {
-      showMessage(err.message, "error");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleGeneratePDF = async () => {
-    setLoading(true);
-    try {
-      const details = getIncludedDetails();
-      const response = await fetch('/api/generate-pdf', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(details),
-      });
-
-      if (!response.ok) throw new Error("Failed to generate PDF");
-
-      // Handle PDF download
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `resume_${name.replace(/\\s+/g, '_')}.pdf`;
-      document.body.appendChild(a);
-      a.click();
-      window.URL.revokeObjectURL(url);
-      a.remove();
-      
-      showMessage("PDF generated successfully!", "success");
-    } catch (err: any) {
-      showMessage(err.message, "error");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const addExperience = () => {
-    setExperiences([...experiences, { id: crypto.randomUUID(), company: '', role: '', duration: '', description: '', included: true }]);
-  };
-
-  const updateExperience = (id: string, field: keyof Experience, value: string | boolean) => {
-    setExperiences(experiences.map(exp => exp.id === id ? { ...exp, [field]: value } : exp));
-  };
-
-  const removeExperience = (id: string) => {
-    setExperiences(experiences.filter(exp => exp.id !== id));
-  };
-
-  const addEducation = () => {
-    setEducation([...education, { id: crypto.randomUUID(), institution: '', degree: '', year: '', included: true }]);
-  };
-
-  const updateEducation = (id: string, field: keyof Education, value: string | boolean) => {
-    setEducation(education.map(edu => edu.id === id ? { ...edu, [field]: value } : edu));
-  };
-
-  const removeEducation = (id: string) => {
-    setEducation(education.filter(edu => edu.id !== id));
-  };
+export default function ResumeBuilder({ session }: any) {
+  const [activeTab, setActiveTab] = useState('personal');
+  const [firstName, setFirstName] = useState('Alex');
+  const [lastName, setLastName] = useState('Rivers');
+  const [summary, setSummary] = useState('Senior Product Designer with 8+ years of experience in creating digital products that are user-centric and scalable. Specialized in design systems and SaaS platforms.');
 
   return (
-    <div className="max-w-7xl mx-auto p-6 flex flex-col lg:flex-row gap-8">
-      {/* Settings Form */}
-      <div className="flex-1 space-y-8">
-        <div>
-          <h2 className="text-2xl font-bold text-slate-900 mb-6">Build Your Resume</h2>
-          
-          <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm space-y-4">
-            <h3 className="text-lg font-semibold text-slate-800 border-b pb-2">Personal Details</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Full Name</label>
-                <input type="text" value={name} onChange={e => setName(e.target.value)} className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" />
+    <div className="min-h-screen bg-slate-100 flex flex-col font-sans text-slate-900">
+      {/* Navbar - Inside component for consistency with screenshot */}
+      <header className="bg-white border-b border-slate-200">
+        <div className="max-w-[1400px] mx-auto px-6 h-16 flex items-center justify-between">
+          <div className="flex items-center gap-10">
+            <div className="flex items-center gap-2 cursor-pointer">
+              <div className="w-8 h-8 bg-red-500 rounded-lg flex items-center justify-center">
+                <BriefcaseIcon className="text-white w-5 h-5" />
               </div>
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Email</label>
-                <input type="email" value={email} onChange={e => setEmail(e.target.value)} className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-slate-700 mb-1">Phone</label>
-                <input type="text" value={phone} onChange={e => setPhone(e.target.value)} className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" />
-              </div>
+              <span className="text-xl font-bold">Jobplex</span>
             </div>
             
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Professional Summary</label>
-              <textarea value={summary} onChange={e => setSummary(e.target.value)} rows={4} className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" />
-            </div>
+            <nav className="hidden md:flex items-center gap-8">
+              <a href="#" className="text-sm font-bold text-slate-500 hover:text-slate-900 transition-colors">Find Jobs</a>
+              <a href="#" className="text-sm font-bold text-slate-500 hover:text-slate-900 transition-colors">Auto-Apply Agent</a>
+              <a href="#" className="text-sm font-bold text-red-500 border-b-2 border-red-500 py-5">Resume Builder</a>
+              <a href="#" className="text-sm font-bold text-slate-500 hover:text-slate-900 transition-colors">My Applications</a>
+            </nav>
           </div>
-        </div>
 
-        <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm space-y-4">
-          <div className="flex justify-between items-center border-b pb-2">
-            <h3 className="text-lg font-semibold text-slate-800">Experience</h3>
-            <button onClick={addExperience} className="flex items-center gap-1 text-sm text-indigo-600 hover:text-indigo-700 font-medium">
-              <Plus className="w-4 h-4" /> Add
+          <div className="flex items-center gap-4">
+            <button className="p-2 hover:bg-slate-100 rounded-full transition-colors relative">
+              <Bookmark className="w-5 h-5 text-slate-600" />
+            </button>
+            <button className="w-9 h-9 bg-slate-100 rounded-full flex items-center justify-center border border-slate-200">
+              <UserIcon className="w-5 h-5 text-slate-500" />
             </button>
           </div>
+        </div>
+      </header>
+
+      <div className="flex-1 p-8 flex flex-col lg:flex-row gap-8 max-w-[1600px] mx-auto w-full">
+        
+        {/* LEFT COLUMN - Form */}
+        <div className="w-full lg:w-[45%] flex flex-col bg-white border border-slate-200 rounded-3xl overflow-hidden shadow-sm">
           
-          {experiences.map((exp) => (
-            <div key={exp.id} className={`p-4 border rounded-lg space-y-3 relative ${exp.included ? 'border-slate-300 bg-white' : 'border-slate-200 bg-slate-50 opacity-70'}`}>
+          {/* Navigation Tabs */}
+          <div className="flex border-b border-slate-100 bg-white px-2">
+            {[
+              { id: 'personal', label: 'Personal Info' },
+              { id: 'experience', label: 'Experience' },
+              { id: 'education', label: 'Education' },
+              { id: 'skills', label: 'Skills' }
+            ].map((tab) => (
               <button 
-                onClick={() => updateExperience(exp.id, 'included', !exp.included)}
-                className="absolute top-4 right-12 text-slate-400 hover:text-indigo-600"
-                title={exp.included ? "Exclude from resume" : "Include in resume"}
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`px-6 py-4 text-xs font-black uppercase tracking-wider transition-all border-b-2 ${activeTab === tab.id ? 'text-red-500 border-red-500' : 'text-slate-400 border-transparent hover:text-slate-600'}`}
               >
-                {exp.included ? <CheckSquare className="w-5 h-5 text-indigo-600" /> : <Square className="w-5 h-5" />}
+                {tab.label}
               </button>
-              <button onClick={() => removeExperience(exp.id)} className="absolute top-4 right-4 text-slate-400 hover:text-red-600">
-                <Trash2 className="w-5 h-5" />
-              </button>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pr-16">
-                <input type="text" placeholder="Company" value={exp.company} onChange={e => updateExperience(exp.id, 'company', e.target.value)} className="px-3 py-2 border border-slate-300 rounded-lg w-full text-sm" />
-                <input type="text" placeholder="Role" value={exp.role} onChange={e => updateExperience(exp.id, 'role', e.target.value)} className="px-3 py-2 border border-slate-300 rounded-lg w-full text-sm" />
-                <input type="text" placeholder="Duration (e.g. Jan 2020 - Present)" value={exp.duration} onChange={e => updateExperience(exp.id, 'duration', e.target.value)} className="px-3 py-2 border border-slate-300 rounded-lg w-full text-sm" />
+            ))}
+          </div>
+
+          {/* Form Content */}
+          <div className="p-8 flex-1 overflow-y-auto space-y-10 custom-scrollbar">
+            
+            {activeTab === 'personal' && (
+              <div className="space-y-6">
+                <h3 className="text-sm font-black flex items-center gap-2 text-slate-900 uppercase tracking-widest">
+                  <UserIcon className="w-4 h-4 text-red-500" />
+                  Personal Details
+                </h3>
+                
+                <div className="grid grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <label className="text-[10px] uppercase tracking-widest font-black text-slate-400">First Name</label>
+                    <input 
+                      type="text" 
+                      value={firstName}
+                      onChange={(e) => setFirstName(e.target.value)}
+                      className="w-full px-4 py-3 bg-slate-50 border border-slate-100 rounded-xl text-sm font-bold focus:ring-1 focus:ring-red-500 outline-none transition-all"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-[10px] uppercase tracking-widest font-black text-slate-400">Last Name</label>
+                    <input 
+                      type="text" 
+                      value={lastName}
+                      onChange={(e) => setLastName(e.target.value)}
+                      className="w-full px-4 py-3 bg-slate-50 border border-slate-100 rounded-xl text-sm font-bold focus:ring-1 focus:ring-red-500 outline-none transition-all"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-[10px] uppercase tracking-widest font-black text-slate-400">Professional Summary</label>
+                  <textarea 
+                    rows={4}
+                    value={summary}
+                    onChange={(e) => setSummary(e.target.value)}
+                    className="w-full px-4 py-3 bg-slate-50 border border-slate-100 rounded-xl text-sm font-medium focus:ring-1 focus:ring-red-500 outline-none resize-none leading-relaxed transition-all"
+                  />
+                </div>
               </div>
-              <textarea placeholder="Description" value={exp.description} onChange={e => updateExperience(exp.id, 'description', e.target.value)} rows={3} className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm" />
-            </div>
-          ))}
-          {experiences.length === 0 && <p className="text-sm text-slate-500 text-center py-4">No experience added yet.</p>}
+            )}
+
+            {activeTab === 'experience' && (
+              <div className="space-y-6">
+                <div className="flex justify-between items-center">
+                  <h3 className="text-sm font-black flex items-center gap-2 text-slate-900 uppercase tracking-widest">
+                    <BriefcaseIcon className="w-4 h-4 text-red-500" />
+                    Experience
+                  </h3>
+                  <button className="text-[10px] font-black text-red-500 hover:text-red-600 transition-colors uppercase tracking-widest flex items-center gap-1.5 bg-red-50 px-3 py-1.5 rounded-lg">
+                    <Plus className="w-3.5 h-3.5" /> Add New
+                  </button>
+                </div>
+
+                <div className="space-y-4">
+                  {/* Experience Item 1 */}
+                  <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
+                    <div className="flex justify-between items-start mb-4">
+                      <div>
+                        <h4 className="font-black text-slate-900">Lead UI Designer</h4>
+                        <p className="text-xs font-bold text-slate-400 mt-1">Innovate Tech Solutions • 2020 - Present</p>
+                      </div>
+                      <div className="flex flex-col items-end gap-2">
+                        <span className="text-[9px] font-black text-slate-300 uppercase tracking-widest">Include in PDF</span>
+                        <div className="w-10 h-5 bg-red-500 rounded-full relative cursor-pointer">
+                          <div className="w-4 h-4 bg-white rounded-full absolute right-0.5 top-0.5 shadow-sm"></div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Experience Item 2 (Expanded) */}
+                  <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
+                    <div className="flex justify-between items-start mb-4">
+                      <div>
+                        <h4 className="font-black text-slate-900">Lead UI Designer</h4>
+                      </div>
+                    </div>
+                    <p className="text-sm text-slate-600 leading-relaxed font-medium">
+                      Directed the end-to-end design process for the flagship mobile application, resulting in a 40% increase in user retention.
+                    </p>
+                  </div>
+
+                  {/* Experience Item 3 (Disabled) */}
+                  <div className="bg-slate-50 border border-slate-100 rounded-2xl p-6 opacity-60">
+                    <div className="flex justify-between items-start mb-4">
+                      <div>
+                        <h4 className="font-black text-slate-900 text-slate-400">Product Designer</h4>
+                        <p className="text-xs font-bold text-slate-300 mt-1">Creative Hub Agency • 2017 - 2020</p>
+                      </div>
+                      <div className="flex flex-col items-end gap-2">
+                        <span className="text-[9px] font-black text-slate-300 uppercase tracking-widest">Include in PDF</span>
+                        <div className="w-10 h-5 bg-slate-200 rounded-full relative cursor-pointer">
+                          <div className="w-4 h-4 bg-white rounded-full absolute left-0.5 top-0.5 shadow-sm"></div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {activeTab === 'skills' && (
+              <div className="space-y-6">
+                <h3 className="text-sm font-black flex items-center gap-2 text-slate-900 uppercase tracking-widest">
+                  <Settings2 className="w-4 h-4 text-red-500" />
+                  Skills
+                </h3>
+                
+                <div className="flex flex-wrap gap-3">
+                  {['UI Design', 'Figma', 'React'].map((skill) => (
+                    <div key={skill} className="bg-red-50 text-red-600 border border-red-100 rounded-full pl-4 pr-2 py-2 text-xs font-black uppercase tracking-wider flex items-center gap-2">
+                      {skill}
+                      <button className="hover:bg-red-100 rounded-full p-1 transition-colors">
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  ))}
+                  <button className="border-2 border-dashed border-red-200 text-red-500 rounded-full px-5 py-2 text-xs font-black uppercase tracking-wider flex items-center gap-2 hover:bg-red-50 transition-all">
+                    <Plus className="w-4 h-4" /> Add Skill
+                  </button>
+                </div>
+              </div>
+            )}
+
+          </div>
         </div>
 
-        <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm space-y-4">
-          <div className="flex justify-between items-center border-b pb-2">
-            <h3 className="text-lg font-semibold text-slate-800">Education</h3>
-            <button onClick={addEducation} className="flex items-center gap-1 text-sm text-indigo-600 hover:text-indigo-700 font-medium">
-              <Plus className="w-4 h-4" /> Add
+        {/* RIGHT COLUMN - Preview */}
+        <div className="flex-1 bg-white border border-slate-200 rounded-[40px] p-12 relative shadow-sm flex justify-center overflow-y-auto custom-scrollbar">
+          
+          {/* The Document Resume */}
+          <div className="w-full max-w-[700px] bg-white pt-10 pb-20 px-16 shadow-[0_15px_40px_-15px_rgba(0,0,0,0.05)] rounded-2xl border border-slate-50 my-4 h-fit">
+            
+            <div className="mb-12 text-center">
+              <h1 className="text-[44px] font-black text-slate-900 tracking-tighter leading-none mb-3 uppercase">
+                {firstName} {lastName}
+              </h1>
+              <h2 className="text-xl font-black text-red-500 tracking-widest uppercase">
+                Senior Product Designer
+              </h2>
+              <div className="flex gap-5 justify-center items-center mt-6 text-[11px] font-bold text-slate-400">
+                <span className="flex items-center gap-1.5"><Mail className="w-3.5 h-3.5 text-red-500" /> alex.rivers@example.com</span>
+                <span className="text-slate-200">|</span>
+                <span className="flex items-center gap-1.5"><MapPin className="w-3.5 h-3.5 text-red-500" /> San Francisco, CA</span>
+                <span className="text-slate-200">|</span>
+                <span className="flex items-center gap-1.5 text-red-500"><Globe className="w-3.5 h-3.5" /> portfolio.design</span>
+              </div>
+            </div>
+
+            <div className="w-full h-[1.5px] bg-red-500/10 mb-10"></div>
+
+            <div className="space-y-12">
+              {/* Summary */}
+              <section>
+                <h3 className="text-[10px] font-black text-red-500 uppercase tracking-[0.2em] mb-4">Summary</h3>
+                <p className="text-[15px] text-slate-600 leading-relaxed font-semibold">
+                  {summary}
+                </p>
+              </section>
+
+              {/* Experience */}
+              <section>
+                <h3 className="text-[10px] font-black text-red-500 uppercase tracking-[0.2em] mb-6">Experience</h3>
+                
+                <div className="space-y-8">
+                  <div>
+                    <div className="flex justify-between items-baseline mb-1.5">
+                      <h4 className="text-lg font-black text-slate-900">Lead UI Designer</h4>
+                      <span className="text-xs font-black text-slate-400">2020 - Present</span>
+                    </div>
+                    <div className="text-[11px] font-black text-slate-500 mb-4 uppercase tracking-widest">Innovate Tech Solutions</div>
+                    <ul className="space-y-3">
+                      {[
+                        "Directed the end-to-end design process for the flagship mobile application.",
+                        "Architected a comprehensive design system that reduced development time by 30%.",
+                        "Mentored a team of 5 junior designers through weekly critiques."
+                      ].map((bullet, i) => (
+                        <li key={i} className="flex gap-3 text-[13.5px] text-slate-600 font-semibold leading-relaxed">
+                          <span className="text-red-500 mt-1.5 w-1.5 h-1.5 rounded-full bg-red-500 shrink-0"></span>
+                          {bullet}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+
+                  <div className="opacity-30 pointer-events-none">
+                    <div className="flex justify-between items-baseline mb-1.5">
+                      <h4 className="text-lg font-black text-slate-900">Product Designer</h4>
+                      <span className="text-xs font-black text-slate-400">2017 - 2020</span>
+                    </div>
+                    <div className="text-[11px] font-black text-slate-400 mb-2 uppercase tracking-widest">Creative Hub Agency</div>
+                    <div className="text-[10px] font-black text-slate-400 italic">[Excluded from final version]</div>
+                  </div>
+                </div>
+              </section>
+
+              {/* Education */}
+              <section>
+                <h3 className="text-[10px] font-black text-red-500 uppercase tracking-[0.2em] mb-6">Education</h3>
+                <div className="flex justify-between items-baseline px-4 border-l-2 border-red-50">
+                  <div>
+                    <h4 className="text-[15px] font-black text-slate-900">BFA in Graphic Design</h4>
+                    <div className="text-xs font-bold text-slate-400 mt-1 uppercase tracking-widest leading-loose">Rhode Island School of Design</div>
+                  </div>
+                  <span className="text-xs font-black text-slate-400">2013 - 2017</span>
+                </div>
+              </section>
+
+              {/* Expertise */}
+              <section>
+                <h3 className="text-[10px] font-black text-red-500 uppercase tracking-[0.2em] mb-5">Expertise</h3>
+                <div className="flex flex-wrap gap-x-8 gap-y-3 px-1">
+                  {['UI Design', 'Figma', 'React', 'UX Strategy'].map((skill) => (
+                    <div key={skill} className="flex items-center gap-2.5 text-[13px] font-black text-slate-700">
+                      <div className="w-1.5 h-1.5 bg-red-500 rounded-full"></div>
+                      {skill}
+                    </div>
+                  ))}
+                </div>
+              </section>
+            </div>
+          </div>
+
+          {/* Floating Actions */}
+          <div className="fixed bottom-12 right-12 flex items-center gap-4 bg-white/40 backdrop-blur-xl p-3 rounded-3xl shadow-2xl border border-white/50">
+            <button className="flex items-center gap-2 px-8 py-4 font-black uppercase tracking-widest text-xs text-slate-700 hover:text-slate-900 transition-all bg-white rounded-2xl shadow-lg border border-slate-100">
+              <Save className="w-4 h-4 text-red-500" />
+              Save to Profile
+            </button>
+            <button className="flex items-center gap-2 px-8 py-4 font-black uppercase tracking-widest text-xs text-slate-900 bg-amber-400 hover:bg-amber-500 transition-all rounded-2xl shadow-lg shadow-amber-400/20">
+              <Download className="w-4 h-4" />
+              Download PDF
             </button>
           </div>
-          
-          {education.map((edu) => (
-            <div key={edu.id} className={`p-4 border rounded-lg space-y-3 relative ${edu.included ? 'border-slate-300 bg-white' : 'border-slate-200 bg-slate-50 opacity-70'}`}>
-              <button 
-                onClick={() => updateEducation(edu.id, 'included', !edu.included)}
-                className="absolute top-4 right-12 text-slate-400 hover:text-indigo-600"
-                title={edu.included ? "Exclude from resume" : "Include in resume"}
-              >
-                {edu.included ? <CheckSquare className="w-5 h-5 text-indigo-600" /> : <Square className="w-5 h-5" />}
-              </button>
-              <button onClick={() => removeEducation(edu.id)} className="absolute top-4 right-4 text-slate-400 hover:text-red-600">
-                <Trash2 className="w-5 h-5" />
-              </button>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pr-16 bg">
-                <input type="text" placeholder="Institution" value={edu.institution} onChange={e => updateEducation(edu.id, 'institution', e.target.value)} className="px-3 py-2 border border-slate-300 rounded-lg w-full text-sm" />
-                <input type="text" placeholder="Degree" value={edu.degree} onChange={e => updateEducation(edu.id, 'degree', e.target.value)} className="px-3 py-2 border border-slate-300 rounded-lg w-full text-sm" />
-                <input type="text" placeholder="Year" value={edu.year} onChange={e => updateEducation(edu.id, 'year', e.target.value)} className="px-3 py-2 border border-slate-300 rounded-lg w-full text-sm" />
-              </div>
-            </div>
-          ))}
-          {education.length === 0 && <p className="text-sm text-slate-500 text-center py-4">No education added yet.</p>}
         </div>
 
-        <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm space-y-4">
-          <h3 className="text-lg font-semibold text-slate-800 border-b pb-2">Skills</h3>
-          <textarea 
-            placeholder="Comma separated skills (e.g. React, Node.js, TypeScript)" 
-            value={skills} 
-            onChange={e => setSkills(e.target.value)} 
-            rows={3} 
-            className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" 
-          />
-        </div>
       </div>
 
-      {/* Action / Tailor Panel */}
-      <div className="w-full lg:w-96 space-y-6">
-        <div className="bg-slate-800 text-white p-6 rounded-xl shadow-lg sticky top-24">
-          <h3 className="text-xl font-bold mb-4 flex items-center gap-2">
-            <Wand2 className="w-5 h-5 text-indigo-400" />
-            Tailor with AI
-          </h3>
-          <p className="text-sm text-slate-300 mb-4">
-            Paste a job description below and Gemini will optimize your summary and included experience to match.
-          </p>
-          <textarea 
-            placeholder="Paste Job Description here..."
-            value={jobDescription}
-            onChange={e => setJobDescription(e.target.value)}
-            rows={8}
-            className="w-full px-3 py-2 bg-slate-700 border border-slate-600 rounded-lg text-sm text-white placeholder-slate-400 focus:ring-2 focus:ring-indigo-400 focus:border-indigo-400 mb-4"
-          />
-          <button 
-            onClick={handleTailorWithGemini}
-            disabled={loading}
-            className="w-full py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-medium transition-colors flex justify-center items-center gap-2 disabled:opacity-50"
-          >
-            {loading ? <span className="animate-pulse">Processing...</span> : <><Wand2 className="w-4 h-4" /> Tailor Resume</>}
-          </button>
-        </div>
-
-        <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm space-y-4 sticky top-[450px]">
-          <h3 className="text-lg font-bold text-slate-900 mb-4 border-b pb-2">Actions</h3>
-          
-          {message.text && (
-            <div className={`p-3 rounded-lg text-sm ${message.type === 'error' ? 'bg-red-50 text-red-600' : 'bg-green-50 text-green-600'}`}>
-              {message.text}
-            </div>
-          )}
-
-          <button 
-            onClick={handleSaveToSupabase}
-            disabled={loading}
-            className="w-full py-3 bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 rounded-lg font-medium transition-colors flex justify-center items-center gap-2"
-          >
-            <Save className="w-4 h-4 text-slate-500" /> Save Profile
-          </button>
-          
-          <button 
-            onClick={handleGeneratePDF}
-            disabled={loading}
-            className="w-full py-3 bg-slate-900 hover:bg-slate-800 text-white rounded-lg font-medium transition-colors flex justify-center items-center gap-2"
-          >
-            <FileDown className="w-4 h-4" /> Export PDF
-          </button>
-        </div>
-      </div>
+      <style dangerouslySetInnerHTML={{__html: `
+        .custom-scrollbar::-webkit-scrollbar { width: 5px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 10px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #fca5a5; }
+      `}} />
     </div>
   );
 }
