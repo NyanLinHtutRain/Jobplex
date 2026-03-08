@@ -1,0 +1,5 @@
+{
+  "name": "HireStream: Job Search & Apply",
+  "description": "A comprehensive job application platform with PDF resume generation, real-time status tracking, and Supabase integration.",
+  "requestFramePermissions": []
+}

@@ -1,9 +1,7 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
 
 @layer base {
   body {
-    @apply bg-background-light dark:bg-background-dark font-display text-slate-900 dark:text-slate-100 min-h-screen antialiased;
+    @apply bg-[#f6f8f7] dark:bg-[#131f1a] font-sans text-slate-900 dark:text-slate-100 min-h-screen antialiased;
   }
 }
